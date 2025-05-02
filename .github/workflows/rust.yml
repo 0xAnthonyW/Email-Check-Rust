@@ -15,10 +15,10 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            target: x86_64-unknown-linux-musl
+            target: x86_64-unknown-linux-gnu
             ext: ""
           - os: windows-latest
-            target: x86_64-pc-windows-gnu
+            target: x86_64-pc-windows-msvc
             ext: ".exe"
           - os: macos-latest
             target: x86_64-apple-darwin
@@ -40,10 +40,6 @@ jobs:
 
       - name: Build release binary
         run: cargo build --release --target ${{ matrix.target }}
-
-      - name: Strip binary (Linux only)
-        if: matrix.os == 'ubuntu-latest'
-        run: strip ${{ env.BUILD_DIR }}/${{ env.BIN_NAME }}
 
       - name: Prepare artefact directory
         shell: bash
