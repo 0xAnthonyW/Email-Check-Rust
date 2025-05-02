@@ -14,6 +14,9 @@ It checks syntax, MX records, SMTP reachability, catch‑all status, Gravatar, d
 | **Tiny binary** | Compiles to a single, static executable |
 | **Cross‑platform** | Works on Windows, macOS, and Linux with the same flags |
 
+## ⬇️Download
+Check out the releases and pick the one for your platform 😊
+https://github.com/0xAnthonyW/Email-Check-Rust/releases
 ---
 
 ## 🚀  Quick start
