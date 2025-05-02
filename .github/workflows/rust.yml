@@ -26,8 +26,6 @@ jobs:
 
     env:
       BIN_NAME: email-check-rust
-      BUILD_DIR: target/${{ matrix.target }}/release
-      ZIP_NAME: email-check-rust-${{ matrix.target }}.zip
 
     steps:
       - name: Checkout Code
@@ -41,17 +39,34 @@ jobs:
       - name: Build release binary
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Prepare artefact directory
+      # copy artefact into dist directory (platform‑specific)
+      - name: Prepare artefact directory (Unix)
+        if: runner.os != 'Windows'
         shell: bash
         run: |
-          mkdir dist
-          cp "${{ env.BUILD_DIR }}/${{ env.BIN_NAME }}${{ matrix.ext }}" "dist/"
+          mkdir -p dist
+          cp "target/${{ matrix.target }}/release/${{ env.BIN_NAME }}${{ matrix.ext }}" dist/
 
-      - name: Compress artefact
+      - name: Prepare artefact directory (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path dist | Out-Null
+          Copy-Item "target\${{ matrix.target }}\release\${{ env.BIN_NAME }}${{ matrix.ext }}" dist\
+
+      # compress artefact
+      - name: Compress artefact (Unix)
+        if: runner.os != 'Windows'
         shell: bash
         run: |
           cd dist
-          zip -r "../${{ env.ZIP_NAME }}" *
+          zip -r "../${{ env.BIN_NAME }}-${{ matrix.target }}.zip" *
+
+      - name: Compress artefact (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path dist\* -DestinationPath "${{ env.BIN_NAME }}-${{ matrix.target }}.zip"
 
       - name: Create GitHub Release
         id: create_release
@@ -70,6 +85,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.ZIP_NAME }}
-          asset_name: ${{ env.ZIP_NAME }}
+          asset_path: "${{ env.BIN_NAME }}-${{ matrix.target }}.zip"
+          asset_name: "${{ env.BIN_NAME }}-${{ matrix.target }}.zip"
           asset_content_type: application/zip
