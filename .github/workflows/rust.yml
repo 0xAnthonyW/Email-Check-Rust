@@ -24,9 +24,6 @@ jobs:
             target: x86_64-apple-darwin
             ext: ""
 
-    env:
-      BIN_NAME: email-check-rust
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -36,37 +33,39 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - name: Build release binary
-        run: cargo build --release --target ${{ matrix.target }}
+      - name: Build all binaries
+        run: |
+          cargo build --release --target ${{ matrix.target }} --bin email-check-rust
+          cargo build --release --target ${{ matrix.target }} --bin bulk
 
-      # copy artefact into dist directory (platform‑specific)
       - name: Prepare artefact directory (Unix)
         if: runner.os != 'Windows'
         shell: bash
         run: |
           mkdir -p dist
-          cp "target/${{ matrix.target }}/release/${{ env.BIN_NAME }}${{ matrix.ext }}" dist/
+          cp "target/${{ matrix.target }}/release/email-check-rust${{ matrix.ext }}" dist/
+          cp "target/${{ matrix.target }}/release/bulk${{ matrix.ext }}" dist/
 
       - name: Prepare artefact directory (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path dist | Out-Null
-          Copy-Item "target\${{ matrix.target }}\release\${{ env.BIN_NAME }}${{ matrix.ext }}" dist\
+          Copy-Item "target\${{ matrix.target }}\release\email-check-rust${{ matrix.ext }}" dist\
+          Copy-Item "target\${{ matrix.target }}\release\bulk${{ matrix.ext }}" dist\
 
-      # compress artefact
       - name: Compress artefact (Unix)
         if: runner.os != 'Windows'
         shell: bash
         run: |
           cd dist
-          zip -r "../${{ env.BIN_NAME }}-${{ matrix.target }}.zip" *
+          zip -r "../release-${{ matrix.target }}.zip" *
 
       - name: Compress artefact (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          Compress-Archive -Path dist\* -DestinationPath "${{ env.BIN_NAME }}-${{ matrix.target }}.zip"
+          Compress-Archive -Path dist\* -DestinationPath "release-${{ matrix.target }}.zip"
 
       - name: Create GitHub Release
         id: create_release
@@ -75,7 +74,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: "release-${{ github.run_number }}-${{ matrix.target }}-${{ github.sha }}"
-          release_name: "Email-Check-Rust ${{ github.run_number }} (${{ matrix.target }})"
+          release_name: "Email-Check-Rust ${{
+            github.run_number }} (${{ matrix.target }})"
           draft: false
           prerelease: false
 
@@ -85,6 +85,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: "${{ env.BIN_NAME }}-${{ matrix.target }}.zip"
-          asset_name: "${{ env.BIN_NAME }}-${{ matrix.target }}.zip"
+          asset_path: "release-${{ matrix.target }}.zip"
+          asset_name: "release-${{ matrix.target }}.zip"
           asset_content_type: application/zip

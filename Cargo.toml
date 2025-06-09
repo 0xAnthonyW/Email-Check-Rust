@@ -9,3 +9,4 @@ check-if-email-exists = "0.9"
 # Tokio with the pieces this program needs
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
 md5 = "0.7"
+futures = "0.3.31"
